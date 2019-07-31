@@ -440,8 +440,8 @@ func frankomoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32
 	for i, val := range mix {
 		binary.LittleEndian.PutUint32(digest[i*4:], val)
 	}
-	//return digest, crypto.Sha512_256(append(seed, digest...))
-	return digest, crypto.Keccak256(append(seed, digest...))
+	return digest, crypto.Sha512_256(append(seed, digest...))
+	//return digest, crypto.Keccak256(append(seed, digest...))
 }
 
 // hashimotoLight aggregates data from the full dataset (using only a small
