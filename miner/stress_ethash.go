@@ -147,7 +147,7 @@ func makeMiner(genesis *core.Genesis) (*node.Node, *eth.Ethereum, error) {
 	datadir, _ := ioutil.TempDir("", "")
 
 	config := &node.Config{
-		Name:    "geth",
+		Name:    "gexp",
 		Version: params.Version,
 		DataDir: datadir,
 		P2P: p2p.Config{

@@ -135,8 +135,8 @@ func (frankohash *Frankomoto) mine(block *types.Block, id int, seed uint64, abor
 		header  = block.Header()
 		hash    = frankohash.SealHash(header).Bytes()
 		target  = new(big.Int).Div(two256, header.Difficulty)
-		number  = header.Number.Uint64()
-		dataset = frankohash.dataset(number, false)
+		//number  = header.Number.Uint64()
+		//dataset = frankohash.dataset(number, false)
 	)
 	// Start generating random nonces until we abort or find a good one
 	var (
@@ -162,7 +162,7 @@ search:
 				attempts = 0
 			}
 			// Compute the PoW value of this nonce
-			digest, result := frankomotoFull(dataset.dataset, hash, nonce)
+			digest, result := frankomoto(hash, nonce)
 			if new(big.Int).SetBytes(result).Cmp(target) <= 0 {
 				// Correct nonce found, create a new header with it
 				header = types.CopyHeader(header)
@@ -181,9 +181,7 @@ search:
 			nonce++
 		}
 	}
-	// Datasets are unmapped in a finalizer. Ensure that the dataset stays live
-	// during sealing so it's not unmapped while being read.
-	runtime.KeepAlive(dataset)
+
 }
 
 // This is the timeout for HTTP requests to notify external miners.
