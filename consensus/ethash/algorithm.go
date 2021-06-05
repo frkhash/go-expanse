@@ -333,6 +333,18 @@ func generateDataset(dest []uint32, epoch uint64, cache []uint32) {
 	pend.Wait()
 }
 
+func frankomoto(hash []byte, nonce uint64) ([]byte, []byte) {
+
+	// Combine header+nonce into a 64 byte seed
+	digest := make([]byte, 40)
+	copy(digest, hash)
+	binary.LittleEndian.PutUint64(digest[32:], nonce)
+
+	digest = crypto.Keccak512(digest)
+
+	return digest, crypto.Keccak256(digest)
+}
+
 // hashimoto aggregates data from the full dataset in order to produce our final
 // value for a particular header hash and nonce.
 func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32) []uint32) ([]byte, []byte) {
@@ -379,8 +391,8 @@ func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32)
 // in-memory cache) in order to produce our final value for a particular header
 // hash and nonce.
 func hashimotoLight(size uint64, cache []uint32, hash []byte, nonce uint64) ([]byte, []byte) {
-	keccak512 := makeHasher(sha3.NewLegacyKeccak512())
-
+	//keccak512 := makeHasher(sha3.NewLegacyKeccak512())
+	/*
 	lookup := func(index uint32) []uint32 {
 		rawData := generateDatasetItem(cache, index, keccak512)
 
@@ -390,18 +402,21 @@ func hashimotoLight(size uint64, cache []uint32, hash []byte, nonce uint64) ([]b
 		}
 		return data
 	}
-	return hashimoto(hash, nonce, size, lookup)
+	*/
+	return frankomoto(hash, nonce)
 }
 
 // hashimotoFull aggregates data from the full dataset (using the full in-memory
 // dataset) in order to produce our final value for a particular header hash and
 // nonce.
 func hashimotoFull(dataset []uint32, hash []byte, nonce uint64) ([]byte, []byte) {
+	/*
 	lookup := func(index uint32) []uint32 {
 		offset := index * hashWords
 		return dataset[offset : offset+hashWords]
 	}
-	return hashimoto(hash, nonce, uint64(len(dataset))*4, lookup)
+	*/
+	return frankomoto(hash, nonce)
 }
 
 const maxEpoch = 2048
