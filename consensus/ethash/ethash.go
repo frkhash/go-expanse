@@ -19,14 +19,11 @@ package ethash
 
 import (
 	"errors"
-	"fmt"
-	"math"
 	"math/big"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -186,34 +183,6 @@ func newlru(what string, maxItems int, new func(epoch uint64) interface{}) *lru 
 	return &lru{what: what, new: new, cache: cache}
 }
 
-// get retrieves or creates an item for the given epoch. The first return value is always
-// non-nil. The second return value is non-nil if lru thinks that an item will be useful in
-// the near future.
-func (lru *lru) get(epoch uint64) (item, future interface{}) {
-	lru.mu.Lock()
-	defer lru.mu.Unlock()
-
-	// Get or create the item for the requested epoch.
-	item, ok := lru.cache.Get(epoch)
-	if !ok {
-		if lru.future > 0 && lru.future == epoch {
-			item = lru.futureItem
-		} else {
-			log.Trace("Requiring new ethash "+lru.what, "epoch", epoch)
-			item = lru.new(epoch)
-		}
-		lru.cache.Add(epoch, item)
-	}
-	// Update the 'future item' if epoch is larger than previously seen.
-	if epoch < maxEpoch-1 && lru.future < epoch+1 {
-		log.Trace("Requiring new future ethash "+lru.what, "epoch", epoch+1)
-		future = lru.new(epoch + 1)
-		lru.future = epoch + 1
-		lru.futureItem = future
-	}
-	return item, future
-}
-
 // cache wraps an ethash cache with some metadata to allow easier concurrent use.
 type cache struct {
 	epoch uint64    // Epoch for which this cache is relevant
@@ -229,57 +198,6 @@ func newCache(epoch uint64) interface{} {
 	return &cache{epoch: epoch}
 }
 
-// generate ensures that the cache content is generated before use.
-func (c *cache) generate(dir string, limit int, lock bool, test bool) {
-	c.once.Do(func() {
-		size := cacheSize(c.epoch*epochLength + 1)
-		seed := seedHash(c.epoch*epochLength + 1)
-		if test {
-			size = 1024
-		}
-		// If we don't store anything on disk, generate and return.
-		if dir == "" {
-			c.cache = make([]uint32, size/4)
-			generateCache(c.cache, c.epoch, seed)
-			return
-		}
-		// Disk storage is needed, this will get fancy
-		var endian string
-		if !isLittleEndian() {
-			endian = ".be"
-		}
-		path := filepath.Join(dir, fmt.Sprintf("cache-R%d-%x%s", algorithmRevision, seed[:8], endian))
-		logger := log.New("epoch", c.epoch)
-
-		// We're about to mmap the file, ensure that the mapping is cleaned up when the
-		// cache becomes unused.
-		runtime.SetFinalizer(c, (*cache).finalizer)
-
-		// Try to load the file from disk and memory map it
-		var err error
-		c.dump, c.mmap, c.cache, err = memoryMap(path, lock)
-		if err == nil {
-			logger.Debug("Loaded old ethash cache from disk")
-			return
-		}
-		logger.Debug("Failed to load old ethash cache", "err", err)
-
-		// No previous cache available, create a new cache file to fill
-		c.dump, c.mmap, c.cache, err = memoryMapAndGenerate(path, size, lock, func(buffer []uint32) { generateCache(buffer, c.epoch, seed) })
-		if err != nil {
-			logger.Error("Failed to generate mapped ethash cache", "err", err)
-
-			c.cache = make([]uint32, size/4)
-			generateCache(c.cache, c.epoch, seed)
-		}
-		// Iterate over all previous instances and delete old ones
-		for ep := int(c.epoch) - limit; ep >= 0; ep-- {
-			seed := seedHash(uint64(ep)*epochLength + 1)
-			path := filepath.Join(dir, fmt.Sprintf("cache-R%d-%x%s", algorithmRevision, seed[:8], endian))
-			os.Remove(path)
-		}
-	})
-}
 
 // finalizer unmaps the memory and closes the file.
 func (c *cache) finalizer() {
@@ -306,70 +224,6 @@ func newDataset(epoch uint64) interface{} {
 	return &dataset{epoch: epoch}
 }
 
-// generate ensures that the dataset content is generated before use.
-func (d *dataset) generate(dir string, limit int, lock bool, test bool) {
-	d.once.Do(func() {
-		// Mark the dataset generated after we're done. This is needed for remote
-		defer atomic.StoreUint32(&d.done, 1)
-
-		csize := cacheSize(d.epoch*epochLength + 1)
-		dsize := datasetSize(d.epoch*epochLength + 1)
-		seed := seedHash(d.epoch*epochLength + 1)
-		if test {
-			csize = 1024
-			dsize = 32 * 1024
-		}
-		// If we don't store anything on disk, generate and return
-		if dir == "" {
-			cache := make([]uint32, csize/4)
-			generateCache(cache, d.epoch, seed)
-
-			d.dataset = make([]uint32, dsize/4)
-			generateDataset(d.dataset, d.epoch, cache)
-
-			return
-		}
-		// Disk storage is needed, this will get fancy
-		var endian string
-		if !isLittleEndian() {
-			endian = ".be"
-		}
-		path := filepath.Join(dir, fmt.Sprintf("full-R%d-%x%s", algorithmRevision, seed[:8], endian))
-		logger := log.New("epoch", d.epoch)
-
-		// We're about to mmap the file, ensure that the mapping is cleaned up when the
-		// cache becomes unused.
-		runtime.SetFinalizer(d, (*dataset).finalizer)
-
-		// Try to load the file from disk and memory map it
-		var err error
-		d.dump, d.mmap, d.dataset, err = memoryMap(path, lock)
-		if err == nil {
-			logger.Debug("Loaded old ethash dataset from disk")
-			return
-		}
-		logger.Debug("Failed to load old ethash dataset", "err", err)
-
-		// No previous dataset available, create a new dataset file to fill
-		cache := make([]uint32, csize/4)
-		generateCache(cache, d.epoch, seed)
-
-		d.dump, d.mmap, d.dataset, err = memoryMapAndGenerate(path, dsize, lock, func(buffer []uint32) { generateDataset(buffer, d.epoch, cache) })
-		if err != nil {
-			logger.Error("Failed to generate mapped ethash dataset", "err", err)
-
-			d.dataset = make([]uint32, dsize/2)
-			generateDataset(d.dataset, d.epoch, cache)
-		}
-		// Iterate over all previous instances and delete old ones
-		for ep := int(d.epoch) - limit; ep >= 0; ep-- {
-			seed := seedHash(uint64(ep)*epochLength + 1)
-			path := filepath.Join(dir, fmt.Sprintf("full-R%d-%x%s", algorithmRevision, seed[:8], endian))
-			os.Remove(path)
-		}
-	})
-}
-
 // generated returns whether this particular dataset finished generating already
 // or not (it may not have been started at all). This is useful for remote miners
 // to default to verification caches instead of blocking on DAG generations.
@@ -384,18 +238,6 @@ func (d *dataset) finalizer() {
 		d.dump.Close()
 		d.mmap, d.dump = nil, nil
 	}
-}
-
-// MakeCache generates a new ethash cache and optionally stores it to disk.
-func MakeCache(block uint64, dir string) {
-	c := cache{epoch: block / epochLength}
-	c.generate(dir, math.MaxInt32, false, false)
-}
-
-// MakeDataset generates a new ethash dataset and optionally stores it to disk.
-func MakeDataset(block uint64, dir string) {
-	d := dataset{epoch: block / epochLength}
-	d.generate(dir, math.MaxInt32, false, false)
 }
 
 // Mode defines the type and amount of PoW verification an ethash engine makes.
@@ -557,59 +399,6 @@ func (ethash *Ethash) Close() error {
 	return nil
 }
 
-// cache tries to retrieve a verification cache for the specified block number
-// by first checking against a list of in-memory caches, then against caches
-// stored on disk, and finally generating one if none can be found.
-func (ethash *Ethash) cache(block uint64) *cache {
-	epoch := block / epochLength
-	currentI, futureI := ethash.caches.get(epoch)
-	current := currentI.(*cache)
-
-	// Wait for generation finish.
-	current.generate(ethash.config.CacheDir, ethash.config.CachesOnDisk, ethash.config.CachesLockMmap, ethash.config.PowMode == ModeTest)
-
-	// If we need a new future cache, now's a good time to regenerate it.
-	if futureI != nil {
-		future := futureI.(*cache)
-		go future.generate(ethash.config.CacheDir, ethash.config.CachesOnDisk, ethash.config.CachesLockMmap, ethash.config.PowMode == ModeTest)
-	}
-	return current
-}
-
-// dataset tries to retrieve a mining dataset for the specified block number
-// by first checking against a list of in-memory datasets, then against DAGs
-// stored on disk, and finally generating one if none can be found.
-//
-// If async is specified, not only the future but the current DAG is also
-// generates on a background thread.
-func (ethash *Ethash) dataset(block uint64, async bool) *dataset {
-	// Retrieve the requested ethash dataset
-	epoch := block / epochLength
-	currentI, futureI := ethash.datasets.get(epoch)
-	current := currentI.(*dataset)
-
-	// If async is specified, generate everything in a background thread
-	if async && !current.generated() {
-		go func() {
-			current.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.DatasetsLockMmap, ethash.config.PowMode == ModeTest)
-
-			if futureI != nil {
-				future := futureI.(*dataset)
-				future.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.DatasetsLockMmap, ethash.config.PowMode == ModeTest)
-			}
-		}()
-	} else {
-		// Either blocking generation was requested, or already done
-		current.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.DatasetsLockMmap, ethash.config.PowMode == ModeTest)
-
-		if futureI != nil {
-			future := futureI.(*dataset)
-			go future.generate(ethash.config.DatasetDir, ethash.config.DatasetsOnDisk, ethash.config.DatasetsLockMmap, ethash.config.PowMode == ModeTest)
-		}
-	}
-	return current
-}
-
 // Threads returns the number of mining threads currently enabled. This doesn't
 // necessarily mean that mining is running!
 func (ethash *Ethash) Threads() int {
@@ -681,10 +470,4 @@ func (ethash *Ethash) APIs(chain consensus.ChainHeaderReader) []rpc.API {
 			Public:    true,
 		},
 	}
-}
-
-// SeedHash is the seed to use for generating a verification cache and the mining
-// dataset.
-func SeedHash(block uint64) []byte {
-	return seedHash(block)
 }

@@ -17,12 +17,13 @@
 package ethash
 
 import (
-	"bytes"
+	//"bytes"
 	"errors"
 	"fmt"
 	"math/big"
 	"runtime"
 	"time"
+	"log"
 
 	mapset "github.com/deckarep/golang-set"
 	"github.com/expanse-org/go-expanse/common"
@@ -552,9 +553,11 @@ func (ethash *Ethash) verifySeal(chain consensus.ChainHeaderReader, header *type
 	digest, result = frankomoto(ethash.SealHash(header).Bytes(), header.Nonce.Uint64())
 
 	// Verify the calculated values against the ones provided in the header
-	if !bytes.Equal(header.MixDigest[:], digest) {
+	if(common.BytesToHash(header.MixDigest[:]).Hex() != common.BytesToHash(digest).Hex() ){
+		log.Print("Header Digest: "+common.BytesToHash(header.MixDigest[:]).Hex() +" Calculated Digest:"+common.BytesToHash(digest).Hex())
 		return errInvalidMixDigest
 	}
+
 	target := new(big.Int).Div(two256, header.Difficulty)
 	if new(big.Int).SetBytes(result).Cmp(target) > 0 {
 		return errInvalidPoW
