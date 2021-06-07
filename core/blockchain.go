@@ -1692,11 +1692,11 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 	defer close(abort)
 
 	errChain := error(nil)
-
+ 	/*
 	if(bc.CurrentBlock().NumberU64() > bc.chainConfig.PirlGuardBlock){
 		errChain = bc.checkChainForAttack(chain, bc.chainConfig.PirlGuardLength)
 	}
-
+	*/
 	// Peek the error for the first block to decide the directing import logic
 	it := newInsertIterator(chain, results, bc.validator)
 
