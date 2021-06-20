@@ -165,6 +165,13 @@ func NewNode(datadir string, config *NodeConfig) (stack *Node, _ error) {
 				config.EthereumNetworkID = 3
 			}
 		}
+		// If we have the Rebirth testnet, hard code the chain configs too
+		if config.EthereumGenesis == RebirthGenesis() {
+			genesis.Config = params.RebirthChainConfig
+			if config.EthereumNetworkID == 1 {
+				config.EthereumNetworkID = 1337
+			}
+		}
 		// If we have the Rinkeby testnet, hard code the chain configs too
 		if config.EthereumGenesis == RinkebyGenesis() {
 			genesis.Config = params.RinkebyChainConfig

@@ -29,6 +29,7 @@ import (
 	"github.com/expanse-org/go-expanse/consensus"
 	"github.com/expanse-org/go-expanse/consensus/clique"
 	"github.com/expanse-org/go-expanse/consensus/ethash"
+	"github.com/expanse-org/go-expanse/consensus/frkhash"
 	"github.com/expanse-org/go-expanse/core"
 	"github.com/expanse-org/go-expanse/eth/downloader"
 	"github.com/expanse-org/go-expanse/eth/gasprice"
@@ -168,6 +169,9 @@ type Config struct {
 	// Ethash options
 	Ethash ethash.Config
 
+	// Frkhash options
+	//Frkhash frkhash.Config
+
 	// Transaction pool options
 	TxPool core.TxPoolConfig
 
@@ -209,27 +213,48 @@ func CreateConsensusEngine(stack *node.Node, chainConfig *params.ChainConfig, co
 	if chainConfig.Clique != nil {
 		return clique.New(chainConfig.Clique, db)
 	}
-	// Otherwise assume proof-of-work
+
+	if chainConfig.Ethash != nil {
+		// Otherwise assume proof-of-work
+		switch config.PowMode {
+		case ethash.ModeFake:
+			log.Warn("Ethash used in fake mode")
+		case ethash.ModeTest:
+			log.Warn("Ethash used in test mode")
+		case ethash.ModeShared:
+			log.Warn("Ethash used in shared mode")
+		}
+		engine := ethash.New(ethash.Config{
+			PowMode:          config.PowMode,
+			CacheDir:         stack.ResolvePath(config.CacheDir),
+			CachesInMem:      config.CachesInMem,
+			CachesOnDisk:     config.CachesOnDisk,
+			CachesLockMmap:   config.CachesLockMmap,
+			DatasetDir:       config.DatasetDir,
+			DatasetsInMem:    config.DatasetsInMem,
+			DatasetsOnDisk:   config.DatasetsOnDisk,
+			DatasetsLockMmap: config.DatasetsLockMmap,
+			NotifyFull:       config.NotifyFull,
+			XIP5Block:        config.XIP5Block,
+		}, notify, noverify)
+		engine.SetThreads(-1) // Disable CPU mining
+		return engine
+	}
+
 	switch config.PowMode {
 	case ethash.ModeFake:
-		log.Warn("Ethash used in fake mode")
+		log.Warn("Frkhash used in fake mode")
 	case ethash.ModeTest:
-		log.Warn("Ethash used in test mode")
+		log.Warn("Frkhash used in test mode")
 	case ethash.ModeShared:
-		log.Warn("Ethash used in shared mode")
+		log.Warn("Frkhash used in shared mode")
 	}
-	engine := ethash.New(ethash.Config{
-		PowMode:          config.PowMode,
-		CacheDir:         stack.ResolvePath(config.CacheDir),
-		CachesInMem:      config.CachesInMem,
-		CachesOnDisk:     config.CachesOnDisk,
-		CachesLockMmap:   config.CachesLockMmap,
-		DatasetDir:       config.DatasetDir,
-		DatasetsInMem:    config.DatasetsInMem,
-		DatasetsOnDisk:   config.DatasetsOnDisk,
-		DatasetsLockMmap: config.DatasetsLockMmap,
-		NotifyFull:       config.NotifyFull,
+	engine := frkhash.New(frkhash.Config{
+		PowMode:    config.PowMode,
+		NotifyFull: config.NotifyFull,
+		XIP5Block:  config.XIP5Block,
 	}, notify, noverify)
 	engine.SetThreads(-1) // Disable CPU mining
+
 	return engine
 }

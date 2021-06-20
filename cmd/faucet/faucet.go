@@ -88,6 +88,7 @@ var (
 
 	goerliFlag  = flag.Bool("goerli", false, "Initializes the faucet with Görli network config")
 	rinkebyFlag = flag.Bool("rinkeby", false, "Initializes the faucet with Rinkeby network config")
+	rebirthFlag = flag.Bool("rebirth", false, "Initializes the faucet with Rebirth network config")
 )
 
 var (

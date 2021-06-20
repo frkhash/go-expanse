@@ -132,6 +132,8 @@ func remoteConsole(ctx *cli.Context) error {
 				}
 			} else if ctx.GlobalBool(utils.RinkebyFlag.Name) {
 				path = filepath.Join(path, "rinkeby")
+			} else if ctx.GlobalBool(utils.RebirthFlag.Name) {
+				path = filepath.Join(path, "rebirth")
 			} else if ctx.GlobalBool(utils.GoerliFlag.Name) {
 				path = filepath.Join(path, "goerli")
 			} else if ctx.GlobalBool(utils.YoloV3Flag.Name) {

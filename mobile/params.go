@@ -32,6 +32,15 @@ func MainnetGenesis() string {
 	return ""
 }
 
+// RebirthGenesis returns the JSON spec to use for the Rebirth test network.
+func RebirthGenesis() string {
+	enc, err := json.Marshal(core.DefaultRebirthGenesisBlock())
+	if err != nil {
+		panic(err)
+	}
+	return string(enc)
+}
+
 // RopstenGenesis returns the JSON spec to use for the Ropsten test network.
 func RopstenGenesis() string {
 	enc, err := json.Marshal(core.DefaultRopstenGenesisBlock())

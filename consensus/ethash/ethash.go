@@ -33,7 +33,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/edsrzf/mmap-go"
+	mmap "github.com/edsrzf/mmap-go"
 	"github.com/expanse-org/go-expanse/consensus"
 	"github.com/expanse-org/go-expanse/log"
 	"github.com/expanse-org/go-expanse/metrics"
@@ -426,6 +426,8 @@ type Config struct {
 	NotifyFull bool
 
 	Log log.Logger `toml:"-"`
+	// ECIP-1099
+	XIP5Block *uint64 `toml:"-"`
 }
 
 // Ethash is a consensus engine based on proof-of-work implementing the ethash

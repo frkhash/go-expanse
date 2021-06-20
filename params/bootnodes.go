@@ -31,6 +31,11 @@ var MainnetBootnodes = []string{
 	//"enode://f6f0d6b9b7d02ec9e8e4a16e38675f3621ea5e69860c739a65c1597ca28aefb3cec7a6d84e471ac927d42a1b64c1cbdefad75e7ce8872d57548ddcece20afdd1@159.203.64.95:42786",
 }
 
+var RebirthBootnodes = []string{
+	"enode://eb38051e612bb3a9ff69962ed3fdb7c535df3b0176738e80e49dd7637b4594e6bd3b9bdbdb420d402df2e95e24acf011831686fac9302d4d1a02a871f08bf542@165.227.203.181:42786",
+	"enode://d56d67a711c74855cc51cf35ac6632f765e946676428775ffb4baf5775352e4d0d4f22fa4d696dbbb8a512294ad6768ada65c47bf24383b637385437359eceb7@159.89.52.50:42786",
+}
+
 // RopstenBootnodes are the enode URLs of the P2P bootstrap nodes running on the
 // Ropsten test network.
 var RopstenBootnodes = []string{
@@ -86,7 +91,9 @@ func KnownDNSNetwork(genesis common.Hash, protocol string) string {
 	var net string
 	switch genesis {
 	case MainnetGenesisHash:
-		net = "mainnet"
+		net = "expanse"
+	case RebirthGenesisHash:
+		net = "rebirth"
 	case RopstenGenesisHash:
 		net = "ropsten"
 	case RinkebyGenesisHash:

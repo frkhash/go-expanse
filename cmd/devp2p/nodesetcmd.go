@@ -29,7 +29,6 @@ import (
 	"github.com/expanse-org/go-expanse/p2p/enr"
 	"github.com/expanse-org/go-expanse/params"
 	"github.com/expanse-org/go-expanse/rlp"
-	"gopkg.in/urfave/cli.v1"
 )
 
 var (
@@ -229,6 +228,8 @@ func ethFilter(args []string) (nodeFilter, error) {
 	switch args[0] {
 	case "mainnet":
 		filter = forkid.NewStaticFilter(params.MainnetChainConfig, params.MainnetGenesisHash)
+	case "rebirth":
+		filter = forkid.NewStaticFilter(params.RebirthChainConfig, params.RebirthGenesisHash)
 	case "rinkeby":
 		filter = forkid.NewStaticFilter(params.RinkebyChainConfig, params.RinkebyGenesisHash)
 	case "goerli":
