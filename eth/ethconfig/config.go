@@ -21,8 +21,6 @@ import (
 	"math/big"
 	"os"
 	"os/user"
-	"path/filepath"
-	"runtime"
 	"time"
 
 	"github.com/expanse-org/go-expanse/common"
@@ -55,16 +53,8 @@ var LightClientGPO = gasprice.Config{
 
 // Defaults contains default settings for use on the Ethereum main net.
 var Defaults = Config{
-	SyncMode: downloader.FastSync,
-	Ethash: ethash.Config{
-		CacheDir:         "ethash",
-		CachesInMem:      2,
-		CachesOnDisk:     3,
-		CachesLockMmap:   false,
-		DatasetsInMem:    1,
-		DatasetsOnDisk:   2,
-		DatasetsLockMmap: false,
-	},
+	SyncMode:                downloader.FastSync,
+	Ethash:                  ethash.Config{},
 	NetworkId:               1,
 	TxLookupLimit:           2350000,
 	LightPeers:              100,
@@ -95,18 +85,20 @@ func init() {
 			home = user.HomeDir
 		}
 	}
-	if runtime.GOOS == "darwin" {
-		Defaults.Ethash.DatasetDir = filepath.Join(home, "Library", "Ethash")
-	} else if runtime.GOOS == "windows" {
-		localappdata := os.Getenv("LOCALAPPDATA")
-		if localappdata != "" {
-			Defaults.Ethash.DatasetDir = filepath.Join(localappdata, "Ethash")
+	/*
+		if runtime.GOOS == "darwin" {
+			//Defaults.Ethash.DatasetDir = filepath.Join(home, "Library", "Ethash")
+		} else if runtime.GOOS == "windows" {
+			localappdata := os.Getenv("LOCALAPPDATA")
+			if localappdata != "" {
+				//Defaults.Ethash.DatasetDir = filepath.Join(localappdata, "Ethash")
+			} else {
+				//Defaults.Ethash.DatasetDir = filepath.Join(home, "AppData", "Local", "Ethash")
+			}
 		} else {
-			Defaults.Ethash.DatasetDir = filepath.Join(home, "AppData", "Local", "Ethash")
+			//Defaults.Ethash.DatasetDir = filepath.Join(home, ".ethash")
 		}
-	} else {
-		Defaults.Ethash.DatasetDir = filepath.Join(home, ".ethash")
-	}
+	*/
 }
 
 //go:generate gencodec -type Config -formats toml -out gen_config.go
@@ -219,16 +211,8 @@ func CreateConsensusEngine(stack *node.Node, chainConfig *params.ChainConfig, co
 		log.Warn("Ethash used in shared mode")
 	}
 	engine := ethash.New(ethash.Config{
-		PowMode:          config.PowMode,
-		CacheDir:         stack.ResolvePath(config.CacheDir),
-		CachesInMem:      config.CachesInMem,
-		CachesOnDisk:     config.CachesOnDisk,
-		CachesLockMmap:   config.CachesLockMmap,
-		DatasetDir:       config.DatasetDir,
-		DatasetsInMem:    config.DatasetsInMem,
-		DatasetsOnDisk:   config.DatasetsOnDisk,
-		DatasetsLockMmap: config.DatasetsLockMmap,
-		NotifyFull:       config.NotifyFull,
+		PowMode:    config.PowMode,
+		NotifyFull: config.NotifyFull,
 	}, notify, noverify)
 	engine.SetThreads(-1) // Disable CPU mining
 	return engine
