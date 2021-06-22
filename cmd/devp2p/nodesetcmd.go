@@ -29,6 +29,7 @@ import (
 	"github.com/expanse-org/go-expanse/p2p/enr"
 	"github.com/expanse-org/go-expanse/params"
 	"github.com/expanse-org/go-expanse/rlp"
+	"gopkg.in/urfave/cli.v1"
 )
 
 var (

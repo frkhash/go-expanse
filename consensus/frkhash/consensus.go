@@ -553,7 +553,7 @@ func (frkhash *Frkhash) verifySeal(chain consensus.ChainHeaderReader, header *ty
 
 	// Verify the calculated values against the ones provided in the header
 	// Mix Digest == Last 32 Bytes of the keccak512 64byte hash.
-	log.Print("Full Header Digest: " + common.Bytes2Hex(digest) + "/n BytesToHash Digest:" + common.BytesToHash(digest).Hex())
+	// log.Print("Full Header Digest: " + common.Bytes2Hex(digest) + "/n BytesToHash Digest:" + common.BytesToHash(digest).Hex())
 
 	if common.BytesToHash(header.MixDigest[:]).Hex() != common.BytesToHash(digest).Hex() {
 		log.Print("Header Digest: " + common.BytesToHash(header.MixDigest[:]).Hex() + " Calculated Digest:" + common.BytesToHash(digest).Hex())
