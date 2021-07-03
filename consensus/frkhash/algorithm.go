@@ -72,15 +72,16 @@ func frankomoto(hash []byte, nonce uint64) ([]byte, []byte) {
 
 	digest = crypto.Keccak512(digest)
 
-	// Here it would be best to change digest into 32 byte
+	// Here it would be best to change digest into 32 byte slice
 	// we could use the first or second half, doesnt really matter
-	// currently common.ByteToHash in consensus.go is lobbing off the first 32 bytes
-	// We could do this instead
-	// d0 := digest[:32] // first 32 bytes
-	// d1 := digest[32:] // last 32 bytes
-	// we could use d0 as the MixDigest and d1 with the result
+	// Because common.ByteToHash in consensus.go is lobbing off the first 32 bytes
+	// We could do this here instead
+	// d0 := digest[:32] // gives us the first 32 bytes
+	d1 := digest[32:] // gives us the last 32 bytes
+	// we could use d0 as the MixDigest and keccak_256(d1) < target
 	// return d0, crypto.Keccak256(d1)
 	// ORRRRRR We could just change Keccak512 to sha256 or sha3.New256() or sha512_256 or blake2b
+	// because they would output a 32byte hash
 
-	return digest, crypto.Keccak256(digest)
+	return d1, crypto.Keccak256(digest)
 }

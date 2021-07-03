@@ -124,10 +124,10 @@ var (
 
 	// RebirthTrustedCheckpoint contains the light client trusted checkpoint for the main network.
 	RebirthTrustedCheckpoint = &TrustedCheckpoint{
-		SectionIndex: 147,
-		SectionHead:  common.HexToHash("0x63bf17b66ec581f4a048a62596c099e0c58040a6861e565a4fb54585c3c8c3de"),
-		CHTRoot:      common.HexToHash("0x10981e2a6949282381d7c91163aab801ca0411ddb3257726b990e68b75b70523"),
-		BloomRoot:    common.HexToHash("0x2a608d377cd4b57b5c74a7c7a6a20a4062c86a807e2792b34ce4e597d1f53fac"),
+		SectionIndex: 2,
+		SectionHead:  common.HexToHash("0xc5992617a2663ff93effcd2bf2d0b0e12546fb2bb8084edc48d518c5c9e3f638"),
+		CHTRoot:      common.HexToHash("0xede2d4ffeaa8506ccb32279bbc360f12d381b674b18b6e30b6921dc5538155f2"),
+		BloomRoot:    common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421"),
 	}
 
 	// RebirthCheckpointOracle contains a set of configs for the main network oracle.
