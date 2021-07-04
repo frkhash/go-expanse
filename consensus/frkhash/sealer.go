@@ -198,7 +198,7 @@ type remoteSealer struct {
 	cancelNotify context.CancelFunc // cancels all notification requests
 	reqWG        sync.WaitGroup     // tracks notification request goroutines
 
-	frkhash       *Frkhash
+	frkhash      *Frkhash
 	noverify     bool
 	notifyURLs   []string
 	results      chan<- *types.Block
@@ -244,7 +244,7 @@ type sealWork struct {
 func startRemoteSealer(frkhash *Frkhash, urls []string, noverify bool) *remoteSealer {
 	ctx, cancel := context.WithCancel(context.Background())
 	s := &remoteSealer{
-		frkhash:       frkhash,
+		frkhash:      frkhash,
 		noverify:     noverify,
 		notifyURLs:   urls,
 		notifyCtx:    ctx,
@@ -344,8 +344,10 @@ func (s *remoteSealer) loop() {
 //   result[3], hex encoded block number
 func (s *remoteSealer) makeWork(block *types.Block) {
 	hash := s.frkhash.SealHash(block.Header())
+	seedhash := make([]byte, 32)
+
 	s.currentWork[0] = hash.Hex()
-	//s.currentWork[1] = common.BytesToHash(SeedHash(block.NumberU64())).Hex()
+	s.currentWork[1] = common.BytesToHash(seedhash).Hex()
 	s.currentWork[2] = common.BytesToHash(new(big.Int).Div(two256, block.Difficulty()).Bytes()).Hex()
 	s.currentWork[3] = hexutil.EncodeBig(block.Number())
 
