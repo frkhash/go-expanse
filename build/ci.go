@@ -65,13 +65,13 @@ import (
 )
 
 var (
-// Files that end up in the gexp*.zip archive.
+	// Files that end up in the gexp*.zip archive.
 	gethArchiveFiles = []string{
 		"COPYING",
 		executablePath("gexp"),
 	}
 
-// Files that end up in the gexp-alltools*.zip archive.
+	// Files that end up in the gexp-alltools*.zip archive.
 	allToolsArchiveFiles = []string{
 		"COPYING",
 		executablePath("abigen"),
@@ -94,15 +94,15 @@ var (
 			Description: "Ethereum bootnode.",
 		},
 		{
-			BinaryName:        "evm",
+			BinaryName:  "evm",
 			Description: "Developer utility version of the EVM (Expanse Virtual Machine) that is capable of running bytecode snippets within a configurable environment and execution mode.",
 		},
 		{
-			BinaryName:        "gexp",
+			BinaryName:  "gexp",
 			Description: "Ethereum CLI client.",
 		},
 		{
-			BinaryName:        "puppeth",
+			BinaryName:  "puppeth",
 			Description: "Expanse private network manager.",
 		},
 		{
@@ -1217,7 +1217,7 @@ func doXgo(cmdline []string) {
 	var tc build.GoToolchain
 
 	// Make sure xgo is available for cross compilation
-	build.MustRun(tc.Install(GOBIN, "github.com/karalabe/xgo@latest"))
+	build.MustRun(tc.Install(GOBIN, "github.com/chrisfranko/xgo@latest"))
 
 	// If all tools building is requested, build everything the builder wants
 	args := append(buildFlags(env), flag.Args()...)
