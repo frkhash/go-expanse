@@ -1217,7 +1217,7 @@ func doXgo(cmdline []string) {
 	var tc build.GoToolchain
 
 	// Make sure xgo is available for cross compilation
-	build.MustRun(tc.Install(GOBIN, "github.com/chrisfranko/xgo@latest"))
+	build.MustRun(tc.Install(GOBIN, "github.com/karalabe/xgo@latest"))
 
 	// If all tools building is requested, build everything the builder wants
 	args := append(buildFlags(env), flag.Args()...)
