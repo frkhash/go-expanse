@@ -1,4 +1,4 @@
-module github.com/expanse-org/go-expanse
+module github.com/frkhash/go-expanse
 
 go 1.13
 
